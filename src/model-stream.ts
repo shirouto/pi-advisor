@@ -14,6 +14,7 @@ import { splitRef } from "./config/state.ts";
 
 export interface ResolvedConfiguredModel {
   apiKey?: string;
+  baseUrl?: string;
   env?: Record<string, string>;
   headers?: Record<string, string | null>;
   model: Model<Api>;
@@ -64,6 +65,7 @@ export const resolveConfiguredModel = async (
 
   return {
     apiKey: auth.apiKey,
+    baseUrl: auth.baseUrl,
     env: auth.env,
     headers: auth.headers,
     model,
@@ -86,6 +88,35 @@ export interface CollectedTextStream {
 }
 
 export const ADVISOR_STREAM_UPDATE_INTERVAL_MS = 90;
+
+type TerminalErrorReason = "error" | "aborted";
+
+const terminalStreamError = (
+  assistant: AssistantMessage | undefined,
+  eventReason: TerminalErrorReason | undefined,
+  eventMessage: string | undefined
+): Error | undefined => {
+  let reason: TerminalErrorReason | undefined;
+
+  if (assistant?.stopReason === "aborted" || eventReason === "aborted") {
+    reason = "aborted";
+  } else if (assistant?.stopReason === "error" || eventReason === "error") {
+    reason = "error";
+  }
+
+  if (!reason) {
+    return undefined;
+  }
+
+  const errorMessage = assistant?.errorMessage ?? eventMessage;
+
+  return new Error(
+    errorMessage ??
+      (reason === "aborted"
+        ? "Advisor request aborted."
+        : "Advisor request failed.")
+  );
+};
 
 const defaultScheduler: CoalescedUpdateScheduler = {
   clearTimeout,
@@ -266,7 +297,13 @@ const createTextEventStream = (
     streamOptions.reasoningEffort = options.reasoning;
   }
 
-  return (streamModel ?? stream)(resolved.model, context, streamOptions);
+  return (streamModel ?? stream)(
+    resolved.baseUrl
+      ? { ...resolved.model, baseUrl: resolved.baseUrl }
+      : resolved.model,
+    context,
+    streamOptions
+  );
 };
 
 export const collectTextStream = async (
@@ -277,9 +314,14 @@ export const collectTextStream = async (
   let thinking = "";
   let text = "";
   const eventStream = createTextEventStream(resolved, options, streamModel);
+  let terminalErrorReason: TerminalErrorReason | undefined;
+  let terminalErrorMessage: string | undefined;
 
   for await (const event of eventStream) {
-    if (event.type === "thinking_delta") {
+    if (event.type === "error") {
+      terminalErrorReason = event.reason;
+      terminalErrorMessage = event.error.errorMessage;
+    } else if (event.type === "thinking_delta") {
       thinking += event.delta;
       options.onChunk?.(thinking, text);
     } else if (event.type === "text_delta") {
@@ -300,14 +342,14 @@ export const collectTextStream = async (
     (message): message is AssistantMessage => message.role === "assistant"
   );
 
-  if (
-    lastAssistant?.stopReason === "error" ||
-    lastAssistant?.stopReason === "aborted"
-  ) {
-    throw new Error(
-      lastAssistant.errorMessage ??
-        `Advisor stream ended with ${lastAssistant.stopReason}.`
-    );
+  const streamError = terminalStreamError(
+    lastAssistant,
+    terminalErrorReason,
+    terminalErrorMessage
+  );
+
+  if (streamError) {
+    throw streamError;
   }
 
   const finalText =

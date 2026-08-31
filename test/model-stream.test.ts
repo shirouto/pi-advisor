@@ -80,9 +80,11 @@ const assistant = (
 const fakeStream = (
   events: any[],
   result: any,
-  capture?: (options: FakeStreamOptions) => void
+  capture?: (options: FakeStreamOptions) => void,
+  captureModel?: (model: any) => void
 ) =>
   ((_model: any, _context: any, options: FakeStreamOptions) => {
+    captureModel?.(_model);
     capture?.(options);
 
     return {
@@ -207,6 +209,7 @@ describe("model stream", () => {
 
           return Promise.resolve({
             apiKey: "secret",
+            baseUrl: "https://resolved.example",
             env: { REGION: "test" },
             headers: { "x-test": "yes" },
             ok: true,
@@ -224,6 +227,7 @@ describe("model stream", () => {
     expect(seen).toEqual([["provider", "model"], model]);
     expect(resolved).toMatchObject({
       apiKey: "secret",
+      baseUrl: "https://resolved.example",
       env: { REGION: "test" },
       headers: { "x-test": "yes" },
       model,
@@ -257,11 +261,13 @@ describe("model stream", () => {
   test("preserves stream options, chunk order, final text, and usage", async () => {
     const chunks: string[] = [];
     let optionsSeen: any;
+    let modelSeen: any;
     const { signal } = new AbortController();
 
     const result = await collectTextStream(
       {
         apiKey: "key",
+        baseUrl: "https://resolved.example",
         env: { REGION: "test" },
         headers: { header: "value" },
         model,
@@ -282,11 +288,15 @@ describe("model stream", () => {
         assistant("final", { input: 3 }),
         (options) => {
           optionsSeen = options;
+        },
+        (value) => {
+          modelSeen = value;
         }
       )
     );
 
     expect(chunks).toEqual(["think|", "think|partial"]);
+    expect(modelSeen).toMatchObject({ baseUrl: "https://resolved.example" });
     expect(result).toEqual({
       text: "final",
       thinking: "think",
@@ -347,6 +357,35 @@ describe("model stream", () => {
         fakeStream([], assistant("partial", { input: 1 }, "aborted"))
       )
     ).rejects.toThrow(cancellation);
+  });
+
+  test("surfaces terminal error events when the final message reports success", async () => {
+    const cases = [
+      ["error", "provider unavailable", "provider unavailable"],
+      ["error", undefined, "Advisor request failed."],
+      ["aborted", undefined, "Advisor request aborted."],
+    ] as const;
+
+    await Promise.all(
+      cases.map(([reason, errorMessage, expected]) =>
+        expect(
+          collectTextStream(
+            { apiKey: "key", model, ref: "provider/model" },
+            { messages: [], systemPrompt: "system" },
+            fakeStream(
+              [
+                {
+                  error: { ...assistant(""), errorMessage },
+                  reason,
+                  type: "error",
+                },
+              ],
+              assistant("")
+            )
+          )
+        ).rejects.toThrow(expected)
+      )
+    );
   });
 
   test("falls back to streamed text and preserves an empty response", async () => {

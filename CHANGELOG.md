@@ -10,6 +10,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 - Updated Oxfmt to 0.74.0.
 
+### Fixed
+
+- Surface provider failures and cancelled Advisor requests with their terminal reason instead of misreporting empty responses as missing advice.
+
 ## 0.14.1 - 2026-10-19
 
 ### Changed
