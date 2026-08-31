@@ -38,9 +38,11 @@ const assistant = (
 const fakeStream = (
   events: unknown[],
   result: unknown,
-  capture?: (options: unknown) => void
+  capture?: (options: unknown) => void,
+  captureModel?: (model: unknown) => void
 ) =>
   ((_model: unknown, _context: unknown, options: unknown) => {
+    captureModel?.(_model);
     capture?.(options);
     return {
       async *[Symbol.asyncIterator]() {
@@ -147,6 +149,7 @@ describe("model stream", () => {
           seen.push(value);
           return Promise.resolve({
             apiKey: "secret",
+            baseUrl: "https://resolved.example",
             env: { REGION: "test" },
             headers: { "x-test": "yes" },
             ok: true,
@@ -162,6 +165,7 @@ describe("model stream", () => {
     expect(seen).toEqual([["provider", "model"], model]);
     expect(resolved).toMatchObject({
       apiKey: "secret",
+      baseUrl: "https://resolved.example",
       env: { REGION: "test" },
       headers: { "x-test": "yes" },
       model,
@@ -195,10 +199,12 @@ describe("model stream", () => {
   test("preserves stream options, chunk order, final text, and usage", async () => {
     const chunks: string[] = [];
     let optionsSeen: any;
+    let modelSeen: any;
     const { signal } = new AbortController();
     const result = await collectTextStream(
       {
         apiKey: "key",
+        baseUrl: "https://resolved.example",
         env: { REGION: "test" },
         headers: { header: "value" },
         model,
@@ -219,10 +225,14 @@ describe("model stream", () => {
         assistant("final", { input: 3 }),
         (options) => {
           optionsSeen = options;
+        },
+        (value) => {
+          modelSeen = value;
         }
       )
     );
     expect(chunks).toEqual(["think|", "think|partial"]);
+    expect(modelSeen).toMatchObject({ baseUrl: "https://resolved.example" });
     expect(result).toEqual({
       text: "final",
       thinking: "think",
@@ -283,6 +293,52 @@ describe("model stream", () => {
         fakeStream([], assistant("partial", { input: 1 }, "aborted"))
       )
     ).rejects.toThrow(cancellation);
+  });
+
+  test("surfaces terminal provider errors instead of treating them as empty advice", async () => {
+    await expect(
+      collectTextStream(
+        { apiKey: "key", model, ref: "provider/model" },
+        { messages: [], systemPrompt: "system" },
+        fakeStream(
+          [
+            {
+              error: assistant(""),
+              reason: "error",
+              type: "error",
+            },
+          ],
+          {
+            ...assistant(""),
+            errorMessage: "provider unavailable",
+            stopReason: "error",
+          }
+        )
+      )
+    ).rejects.toThrow("provider unavailable");
+  });
+
+  test("surfaces terminal aborts explicitly", async () => {
+    await expect(
+      collectTextStream(
+        { apiKey: "key", model, ref: "provider/model" },
+        { messages: [], systemPrompt: "system" },
+        fakeStream(
+          [
+            {
+              error: assistant(""),
+              reason: "aborted",
+              type: "error",
+            },
+          ],
+          {
+            ...assistant(""),
+            errorMessage: "request cancelled",
+            stopReason: "aborted",
+          }
+        )
+      )
+    ).rejects.toThrow("request cancelled");
   });
 
   test("falls back to streamed text and preserves an empty response", async () => {
