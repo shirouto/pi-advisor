@@ -6,9 +6,7 @@ export type Unavailable = typeof UNAVAILABLE;
 export type CostValue = number | Unavailable;
 export type GateDecision = "proceed" | "revise" | "blocked";
 export type GateFailureMode =
-  | "block-session"
-  | "block-tool"
-  | "warn-and-continue";
+  "block-session" | "block-tool" | "warn-and-continue";
 export type ReplayCase =
   | "proceed"
   | "revise"
@@ -20,14 +18,7 @@ export type DecisionPolarity = "positive" | "negative";
 export type CandidateBand = "trivial" | "candidate-uplift" | "out-of-reach";
 export type BenchmarkTier = "replay" | "decisions" | "screen" | "evaluate";
 export type ArmName =
-  | "null"
-  | "cheap"
-  | "frontier"
-  | "oracle"
-  | "E"
-  | "E+A"
-  | "F"
-  | "F′";
+  "null" | "cheap" | "frontier" | "oracle" | "E" | "E+A" | "F" | "F′";
 export type ModelRole = "executor" | "advisor" | "judge";
 
 export interface ModelPin {

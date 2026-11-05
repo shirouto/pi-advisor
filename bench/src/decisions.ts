@@ -17,8 +17,8 @@ import {
 } from "./config.ts";
 import { controlJudge, defaultControlAdvice, runControls } from "./controls.ts";
 import {
-  CostMeter,
   configuredCost,
+  CostMeter,
   estimateCost,
   normalizeUsage,
 } from "./cost.ts";

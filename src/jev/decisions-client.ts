@@ -25,8 +25,7 @@ export interface DecisionsScoreQuestion {
 }
 
 export type DecisionsQuestion =
-  | DecisionsPredicateQuestion
-  | DecisionsScoreQuestion;
+  DecisionsPredicateQuestion | DecisionsScoreQuestion;
 
 export interface DecisionsRequest {
   input: string;

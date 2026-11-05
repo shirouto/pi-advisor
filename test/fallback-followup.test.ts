@@ -9,9 +9,9 @@ import {
 
 import { resetConfigCache } from "../src/config.ts";
 import {
+  AdvisorFollowUpCache,
   FOLLOW_UP_MAX_TOOL_CALLS,
   FOLLOW_UP_TTL_MS,
-  AdvisorFollowUpCache,
 } from "../src/follow-up.ts";
 import { AdvisorSessionState } from "../src/session-state.ts";
 import { consultAdvisor, registerAdvisorTool } from "../src/tools.ts";

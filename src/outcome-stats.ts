@@ -4,8 +4,8 @@ import { isRecord, isString } from "./content-utils.ts";
 import {
   ADOPTIONS,
   OUTCOME_TRIGGERS,
-  VALIDATIONS,
   outcomeLogPath,
+  VALIDATIONS,
 } from "./outcomes.ts";
 import type {
   OutcomeAdoption,

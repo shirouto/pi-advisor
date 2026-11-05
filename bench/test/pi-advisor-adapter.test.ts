@@ -10,9 +10,9 @@ import { join } from "node:path";
 
 import {
   assertPiAdvisorPrerequisites,
+  parseAdvisorAttestation,
   PiAdvisorAdapterUnavailableError,
   PiAdvisorHarborAdapter,
-  parseAdvisorAttestation,
 } from "../src/pi-advisor-adapter.ts";
 
 const prerequisites = (extensionPath: string) => ({

@@ -8,7 +8,7 @@ const RUNTIME_BUILTINS = new Set([
   ...builtinModules,
   "bun:test",
   "oxlint",
-  "oxfmt",
+  "bun",
 ]);
 
 const packageNameOf = (specifier: string): string | null => {

@@ -8,7 +8,7 @@ A configurable second-opinion workflow for <a href="https://github.com/earendil-
 
 </div>
 
-![Downloads](https://img.shields.io/npm/d18m/pi-advisor-flow?style=flat) ![NPM Version](https://img.shields.io/npm/v/pi-advisor-flow?style=flat) ![Pi Advisor Flow badge](https://img.shields.io/badge/advisor%20flow-fff?logo=pi&logoColor=000)
+![Downloads](https://img.shields.io/npm/d18m/pi-advisor-flow?style=flat) ![NPM Version](https://img.shields.io/npm/v/pi-advisor-flow?style=flat) ![Pi Advisor Flow badge](https://img.shields.io/badge/advisor%20flow-fff?logo=pi&logoColor=000) [![omp status](https://omppackages.com/badge/pi-advisor-flow.svg)](https://omppackages.com/packages/pi-advisor-flow)
 
 `pi-advisor-flow` keeps one model focused on execution and makes a second, smarter model available for consequential decisions, stalled work, and final reviews. The Executor still owns the work. The Advisor challenges assumptions, exposes risks, and suggests verification steps without taking over or running tools.
 
@@ -41,6 +41,8 @@ Keep implementation on a fast model and borrow frontier reasoning only when deci
 5. The Executor decides what to adopt, changes the code, and validates it.
 
 Regular consultations never block execution. Automatic loop gates are different: they evaluate repeated tool calls and can stop a tool action or session based on your configured failure policy.
+
+Herdr status reports refresh their sequence numbers so later consultation cleanup can recover from earlier reports as time advances. Recovery still requires a new clear request; ordinary turns do not clear existing labels automatically. See [Herdr integration](docs/herdr.md) for ordering and delivery limits.
 
 ## Install
 
@@ -81,7 +83,7 @@ The Executor is whichever model your Pi session is using; `/advisor` never switc
 /advisor executor=openai-codex/gpt-5.6-luna advisor=openai-codex/gpt-5.6-sol
 ```
 
-From the Executor, `ask_advisor({})` requests a general review. A targeted `question` or concise `draft` can focus the review on a particular decision. `/advisor-settings` can restrict this tool and every automatic Advisor gate to a whitelist of exact `provider/model` Executor references; an empty whitelist preserves the default of allowing every model.
+From the Executor, `ask_advisor({})` requests a general review. A targeted `question` or concise `draft` can focus the review on a particular decision. Advisor log feedback is off by default; enable **Advisor log feedback** in `/advisor-settings` to include budget and Scout status messages in session logs. Actual Advisor call and result messages remain visible either way, and call limits and enforcement are unchanged. `/advisor-settings` can restrict this tool and every automatic Advisor gate to a whitelist of exact `provider/model` Executor references; an empty whitelist preserves the default of allowing every model.
 
 In the Settings, enable Simple Mode for a quick start.
 
@@ -138,14 +140,14 @@ Successful calls return an opaque `adviceId`. If global outcome logging is enabl
 
 ## Commands
 
-| Command | What it does |
-| --- | --- |
-| `/advisor` | Enable the flow; choose available models when needed. |
-| `/advisor-manual [focus]` | Ask for an immediate second opinion. |
-| `/advisor-models` | Choose the Executor, Advisor, and optional fallback models. |
-| `/advisor-settings` | Configure behavior, models, context, privacy, and limits. |
-| `/advisor-stats` | Show retained outcome adoption and validation stats. |
-| `/advisor-off` | Disable model-facing Advisor tools across sessions and turn off persistent activation. |
+| Command                   | What it does                                                                           |
+| ------------------------- | -------------------------------------------------------------------------------------- |
+| `/advisor`                | Enable the flow; choose available models when needed.                                  |
+| `/advisor-manual [focus]` | Ask for an immediate second opinion.                                                   |
+| `/advisor-models`         | Choose the Executor, Advisor, and optional fallback models.                            |
+| `/advisor-settings`       | Configure behavior, models, context, privacy, and limits.                              |
+| `/advisor-stats`          | Show retained outcome adoption and validation stats.                                   |
+| `/advisor-off`            | Disable model-facing Advisor tools across sessions and turn off persistent activation. |
 
 In the interactive TUI, `/advisor-manual [focus]` opens a centered overlay with the focus text prefilled, a choice of permitted Git-context level, and live progress in the transcript. Canceling has no side effects.
 

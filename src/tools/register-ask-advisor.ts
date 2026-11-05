@@ -154,8 +154,7 @@ export const registerAskAdvisorTool = ({
       "Consult the on-demand Advisor model for strategic guidance. Call with an empty object for a contextual review; attach an optional draft for concrete plan or completion review. Use followUpTo with a new question to continue one cached consultation without rebuilding its redacted context. If the Advisor explicitly names a missing file, you may make a sequential fresh consultation with includeTrackedFiles when enabled and relevant. In Pi Codemode, gather and filter deterministic tool results first, then call tools.ask_advisor. Nested results are not automatically reconstructed: pass only permitted, concise summaries in draft (untrusted, capped at 8 KiB, not independently verified). Draft does not inherit source-tool disclosure policies; use gitContext for patches within the user's allowance.",
     async execute(_id, params, signal, onUpdate, ctx) {
       let followUp:
-        | { adviceId: string; payload: AdvisorFollowUpPayload }
-        | undefined;
+        { adviceId: string; payload: AdvisorFollowUpPayload } | undefined;
 
       try {
         loadConfig(ctx);

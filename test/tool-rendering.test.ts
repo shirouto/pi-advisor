@@ -687,7 +687,7 @@ describe("ask_advisor result spacing", () => {
     const sgr = new RegExp(`${ESC}\\[[0-9;]*m`, "gu");
 
     const lines = ["", ...container.render(120)].map((line) =>
-      line.replace(sgr, "")
+      line.replaceAll(sgr, "")
     );
 
     const questionAt = lines.findIndex((line) => line.includes("test"));

@@ -11,14 +11,14 @@ import {
   setAdvisorCustomInvocationRef,
   setAdvisorDisableSameModelRef,
   setAdvisorEffortRef,
-  setAdvisorFallbackModelRef,
   setAdvisorFailureGateRef,
   setAdvisorFailureModeRef,
+  setAdvisorFallbackModelRef,
   setAdvisorGitContextMaxCharsRef,
   setAdvisorGitContextRef,
   setAdvisorHerdrIntegrationRef,
-  setAdvisorJevDigestMaxCharsRef,
   setAdvisorJevClassifierRef,
+  setAdvisorJevDigestMaxCharsRef,
   setAdvisorJevFilterEnabledRef,
   setAdvisorJevFilterNoulMarginRef,
   setAdvisorJevFilterOverrideWindowRef,
@@ -26,6 +26,7 @@ import {
   setAdvisorJevTimeoutMsRef,
   setAdvisorJevTurnGateEveryTurnsRef,
   setAdvisorJevTurnGateNoulThresholdRef,
+  setAdvisorLogFeedbackRef,
   setAdvisorLoopThresholdRef,
   setAdvisorMaxCallsPerSessionRef,
   setAdvisorModelWhitelistRef,
@@ -38,9 +39,9 @@ import {
   setAdvisorToolPoliciesRef,
   setAdvisorToolResultMaxBytesRef,
   setAdvisorToolResultMaxLinesRef,
+  setAdvisorToolsEnabledRef,
   setAdvisorTrackedFileContentRef,
   setAdvisorUntrackedContentRef,
-  setAdvisorToolsEnabledRef,
   setAlwaysOnRef,
   setContextMaxCharsRef,
   setShowUsageDetailsRef,
@@ -78,6 +79,7 @@ const applySessionSettings = (settings: AdvisorSettings) => {
   setAdvisorMaxCallsPerSessionRef(settings.maxCallsPerSession);
   setAdvisorModelWhitelistRef(settings.modelWhitelist ?? []);
   setAdvisorSessionSummaryRef(settings.sessionSummary ?? false);
+  setAdvisorLogFeedbackRef(settings.logFeedback ?? false);
   setAdvisorScoutEnabledRef(settings.scoutEnabled ?? false);
   setAdvisorScoutTimeoutMsRef(
     settings.scoutTimeoutMs ?? DEFAULT_SCOUT_TIMEOUT_MS

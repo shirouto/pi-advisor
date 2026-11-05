@@ -6,10 +6,10 @@
 
 The benchmark has three isolated tiers:
 
-| Tier | Command | What it can establish |
-| --- | --- | --- |
-| 1 — replay | `bun run bench:replay` | Hermetic regression and privacy checks |
-| 2 — decisions | `bun run bench:decisions` | Advisor decision-point scoring |
+| Tier           | Command                                           | What it can establish                     |
+| -------------- | ------------------------------------------------- | ----------------------------------------- |
+| 1 — replay     | `bun run bench:replay`                            | Hermetic regression and privacy checks    |
+| 2 — decisions  | `bun run bench:decisions`                         | Advisor decision-point scoring            |
 | 3 — ReactBench | `bun run bench:screen` / `bun run bench:evaluate` | End-to-end uplift and cost/value evidence |
 
 Tier 3 is the only tier that can support a product value claim. The other tiers are regression signals and must not be presented as absolute ReactBench scores.

@@ -15,10 +15,10 @@ import {
   keyEntryPrompt,
 } from "./jev-setup-support.ts";
 import type {
+  JevProviderAction,
   JevProviderMode,
   JevProviderSubmenuOptions,
   JevProviderViewState,
-  JevProviderAction,
 } from "./jev-setup-support.ts";
 import { MaskedInput } from "./masked-input.ts";
 import type { JevProviderSelection, JevSetupDeps } from "./types.ts";

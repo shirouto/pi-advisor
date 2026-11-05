@@ -34,6 +34,7 @@ All fields are optional. The model refs below are explicit examples of models av
   "gateFailureMode": "block-session",
 
   "advisorSessionSummary": false,
+  "advisorLogFeedback": false,
   "advisorScoutEnabled": false,
   "showUsageDetails": true,
   "showUsageFooter": false,
@@ -104,6 +105,10 @@ Scout has a 30-second total timeout. Missing model or authentication, provider e
 
 Scout usage, latency, selection counts, pre-Scout omissions, and fallback reasons are displayed separately from Advisor usage. Usage and cost details are shown by default; set `showUsageDetails` to `false` to hide details from extension-rendered Advisor, Scout, and gate output without changing usage accounting or Pi's `/cost` totals. The cumulative Advisor footer is controlled independently by `showUsageFooter`, which defaults to `false`. Both settings apply immediately when saved and do not require a reload. These displays remain local and ephemeral and are not included in Session Advisor Summary or Herdr reports.
 
+## Advisor log feedback
+
+`advisorLogFeedback` defaults to `false`. When enabled, pi-advisor adds remaining-call budget and Scout status messages to session logs. Turn on **Advisor log feedback** in `/advisor-settings` to include them. Actual Advisor call and result messages remain visible either way. This setting does not change call accounting, reservations, or enforcement.
+
 ## Context and limits
 
 - `contextMaxChars` defaults to `15000`. It preserves complete semantic entries and adds an omission marker rather than splitting a message.
@@ -171,12 +176,12 @@ Malformed, missing, duplicate, or contradictory decisions are gate failures. The
 | `block-tool`              | Block only the current tool action. |
 | `warn-and-continue`       | Show a warning and continue.        |
 
-| Condition | `block-session` | `block-tool` | `warn-and-continue` |
-| --- | --- | --- | --- |
-| Advisor unavailable or timed out | Block session | Block tool action | Warn and continue |
-| Missing, malformed, duplicate, or contradictory decision | Block session | Block tool action | Warn and continue |
-| Shared budget exhausted | Block session | Block tool action | Warn and continue |
-| `Decision: blocked` | Block session | Block tool action | Warn and continue |
+| Condition                                                | `block-session` | `block-tool`      | `warn-and-continue` |
+| -------------------------------------------------------- | --------------- | ----------------- | ------------------- |
+| Advisor unavailable or timed out                         | Block session   | Block tool action | Warn and continue   |
+| Missing, malformed, duplicate, or contradictory decision | Block session   | Block tool action | Warn and continue   |
+| Shared budget exhausted                                  | Block session   | Block tool action | Warn and continue   |
+| `Decision: blocked`                                      | Block session   | Block tool action | Warn and continue   |
 
 `advisorBlockOnBlocked` controls whether a session block immediately aborts the active run. It never turns a session block into a tool-only block. A recorded session block remains fail-safe after `/advisor-off`; start a new session to resume tool execution.
 

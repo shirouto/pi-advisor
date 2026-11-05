@@ -8,10 +8,10 @@ import {
   setAdvisorScoutTimeoutMsRef,
 } from "../src/config/state.ts";
 import type {
-  CollectTextStreamOptions,
-  ResolvedConfiguredModel,
   collectTextStream,
+  CollectTextStreamOptions,
   resolveConfiguredModel,
+  ResolvedConfiguredModel,
 } from "../src/model-stream.ts";
 import type { ScoutManifest } from "../src/scout-context.ts";
 import {

@@ -14,10 +14,7 @@ import { resolveOpenAIDecisionsKey } from "./openai-key-store.ts";
 import type { OpenAIDecisionsKeyResolution } from "./openai-key-store.ts";
 
 export type JevTransportKind =
-  | "typesafe"
-  | "openrouter"
-  | "openai-decisions"
-  | "typesafe-compatible";
+  "typesafe" | "openrouter" | "openai-decisions" | "typesafe-compatible";
 
 type JevCredentialSource =
   | JevKeySource

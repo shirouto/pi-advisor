@@ -178,15 +178,13 @@ const assertRuntimeArtifacts = (result: ReactBenchTrialResult) => {
   if (!usage) {
     throw new Error("Harbor adapter result must include usage aggregates.");
   }
-  if (
-    !(
-      isRecord(usage) &&
-      isRecord(usage.executor) &&
-      isRecord(usage.advisor) &&
-      usage.executor.usageAvailable === true &&
-      usage.advisor.usageAvailable === true
-    )
-  ) {
+  if (!(
+    isRecord(usage) &&
+    isRecord(usage.executor) &&
+    isRecord(usage.advisor) &&
+    usage.executor.usageAvailable === true &&
+    usage.advisor.usageAvailable === true
+  )) {
     throw new Error(
       "Harbor adapter result contains unavailable or malformed usage aggregates."
     );
@@ -244,21 +242,19 @@ const parseAttestationValue = (
       ? candidate.advisorCalls <= 1 &&
         (!expectedSmoke || candidate.advisorCalls === 1)
       : candidate.advisorCalls === 0);
-  if (
-    !(
-      isRecord(value) &&
-      value.adapter === ADVISOR_ADAPTER_ID &&
-      value.extension === ADVISOR_EXTENSION_ID &&
-      value.loaded === true &&
-      value.shutdown === true &&
-      typeof value.extensionVersion === "string" &&
-      value.extensionVersion === expectedVersion &&
-      (value.mode === "executor" || value.mode === "advisor") &&
-      value.mode === modeForArm(arm) &&
-      value.smokeProtocol === expectedSmoke &&
-      hasValidAdvisorCalls(value)
-    )
-  ) {
+  if (!(
+    isRecord(value) &&
+    value.adapter === ADVISOR_ADAPTER_ID &&
+    value.extension === ADVISOR_EXTENSION_ID &&
+    value.loaded === true &&
+    value.shutdown === true &&
+    typeof value.extensionVersion === "string" &&
+    value.extensionVersion === expectedVersion &&
+    (value.mode === "executor" || value.mode === "advisor") &&
+    value.mode === modeForArm(arm) &&
+    value.smokeProtocol === expectedSmoke &&
+    hasValidAdvisorCalls(value)
+  )) {
     throw new Error(
       "Harbor adapter must attest that the pinned pi-advisor extension loaded, shut down cleanly, and stayed within the pinned consultation budget."
     );

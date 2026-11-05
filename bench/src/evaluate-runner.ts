@@ -117,17 +117,15 @@ const readScreening = (
   const rawResults = report.metrics.tasks;
   const rawTrials = report.metrics.trajectories;
   const rawTrivial = report.metrics.trivialStratumTaskIds;
-  if (
-    !(
-      report.tier === "screen" &&
-      Array.isArray(rawResults) &&
-      rawResults.length > 0 &&
-      Array.isArray(rawTrials) &&
-      Array.isArray(rawTrivial) &&
-      exactSeedSet(report.metrics.screeningSeeds, SCREENING_SEEDS) &&
-      exactSeedSet(report.metrics.evaluationSeeds, EVALUATION_SEEDS)
-    )
-  ) {
+  if (!(
+    report.tier === "screen" &&
+    Array.isArray(rawResults) &&
+    rawResults.length > 0 &&
+    Array.isArray(rawTrials) &&
+    Array.isArray(rawTrivial) &&
+    exactSeedSet(report.metrics.screeningSeeds, SCREENING_SEEDS) &&
+    exactSeedSet(report.metrics.evaluationSeeds, EVALUATION_SEEDS)
+  )) {
     throw new TypeError(
       "Screening report is missing task assignments, trajectories, or pinned seed sets."
     );

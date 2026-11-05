@@ -8,9 +8,4 @@ export const asExtensionContext = <T extends object>(
 
 /** Named JSON value contract for parsed fixture and response payloads. */
 export type JsonValue =
-  | string
-  | null
-  | number
-  | boolean
-  | JsonValue[]
-  | { [key: string]: JsonValue };
+  string | null | number | boolean | JsonValue[] | { [key: string]: JsonValue };

@@ -40,12 +40,10 @@ export const registerManualCommand = (runtime: CommandRuntime) => {
         return;
       }
 
-      if (
-        !(
-          isSimpleMode() ||
-          runtime.advisorSessionState.canConsult(getAdvisorMaxCallsPerSession())
-        )
-      ) {
+      if (!(
+        isSimpleMode() ||
+        runtime.advisorSessionState.canConsult(getAdvisorMaxCallsPerSession())
+      )) {
         runtime.reportManualBudgetExhausted(ctx);
 
         return;
@@ -82,14 +80,10 @@ export const registerManualCommand = (runtime: CommandRuntime) => {
           return;
         }
 
-        if (
-          !(
-            isSimpleMode() ||
-            runtime.advisorSessionState.canConsult(
-              getAdvisorMaxCallsPerSession()
-            )
-          )
-        ) {
+        if (!(
+          isSimpleMode() ||
+          runtime.advisorSessionState.canConsult(getAdvisorMaxCallsPerSession())
+        )) {
           runtime.reportManualBudgetExhausted(ctx);
 
           return;

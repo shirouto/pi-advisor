@@ -11,9 +11,9 @@ import { basename, join } from "node:path";
 
 import {
   buildHarborTrialArgs,
-  type HarborTrialRequest,
   harborInfrastructureFailureCategory,
   harborTrialAttemptName,
+  type HarborTrialRequest,
   isPreAgentHarborInfrastructureFailure,
   parseHarborEnvironment,
   parseHarborTrialArgs,

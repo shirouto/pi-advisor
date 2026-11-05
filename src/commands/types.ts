@@ -32,11 +32,7 @@ export type ManualConsult = (
 export type ThinkingLevel = Parameters<ExtensionAPI["setThinkingLevel"]>[0];
 
 export type ManualAdvisorProgressPhase =
-  | "preparing"
-  | "active"
-  | "complete"
-  | "cancelled"
-  | "error";
+  "preparing" | "active" | "complete" | "cancelled" | "error";
 
 export interface ManualAdvisorProgressState {
   phase: ManualAdvisorProgressPhase;

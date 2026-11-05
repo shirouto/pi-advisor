@@ -26,7 +26,7 @@ const expectJevFailure = async <T>(ask: Promise<T>): Promise<JevFailure> => {
   const failure = await ask.catch((error: JevFailure) => error);
 
   if (!(failure instanceof JevFailure)) {
-    throw new Error("expected ask to reject with JevFailure");
+    throw new TypeError("expected ask to reject with JevFailure");
   }
 
   return failure;

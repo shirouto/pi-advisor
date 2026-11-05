@@ -9,12 +9,13 @@ import {
   setAdvisorEffortRef,
   setAdvisorFailureGateRef,
   setAdvisorFailureModeRef,
+  setAdvisorFallbackModelRef,
   setAdvisorGitContextMaxCharsRef,
   setAdvisorGitContextRef,
   setAdvisorHerdrIntegrationRef,
-  setAdvisorJevDigestMaxCharsRef,
   setAdvisorJevBaseUrlRef,
   setAdvisorJevClassifierRef,
+  setAdvisorJevDigestMaxCharsRef,
   setAdvisorJevFilterEnabledRef,
   setAdvisorJevFilterNoulMarginRef,
   setAdvisorJevFilterOverrideWindowRef,
@@ -26,6 +27,7 @@ import {
   setAdvisorJevTransportRef,
   setAdvisorJevTurnGateEveryTurnsRef,
   setAdvisorJevTurnGateNoulThresholdRef,
+  setAdvisorLogFeedbackRef,
   setAdvisorLoopThresholdRef,
   setAdvisorMaxCallsPerSessionRef,
   setAdvisorModelWhitelistRef,
@@ -33,13 +35,13 @@ import {
   setAdvisorPlanGateRef,
   setAdvisorRedactSecretsRef,
   setAdvisorRef,
-  setAdvisorFallbackModelRef,
   setAdvisorScoutEnabledRef,
   setAdvisorScoutTimeoutMsRef,
   setAdvisorSessionSummaryRef,
   setAdvisorToolPoliciesRef,
   setAdvisorToolResultMaxBytesRef,
   setAdvisorToolResultMaxLinesRef,
+  setAdvisorToolsEnabledRef,
   setAdvisorTrackedFileContentRef,
   setAdvisorUntrackedContentRef,
   setAlwaysOnRef,
@@ -50,7 +52,6 @@ import {
   setShowUsageDetailsRef,
   setShowUsageFooterRef,
   setSimpleModeRef,
-  setAdvisorToolsEnabledRef,
 } from "./state.ts";
 import type { AdvisorConfig } from "./types.ts";
 import {
@@ -92,6 +93,7 @@ export const resetDefaults = () => {
   setAdvisorMaxCallsPerSessionRef(undefined);
   setAdvisorModelWhitelistRef([]);
   setAdvisorSessionSummaryRef(false);
+  setAdvisorLogFeedbackRef(false);
   setSimpleModeRef(false);
   setAdvisorToolsEnabledRef(true);
   setAlwaysOnRef(false);
@@ -210,6 +212,7 @@ export const applyConfig = (config: AdvisorConfig) => {
     "advisorSessionSummary",
     setAdvisorSessionSummaryRef
   );
+  applyOptionalConfig(config, "advisorLogFeedback", setAdvisorLogFeedbackRef);
   applyOptionalConfig(config, "advisorScoutEnabled", setAdvisorScoutEnabledRef);
   applyOptionalConfig(
     config,

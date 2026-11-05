@@ -57,13 +57,13 @@ import type {
 import {
   adviceForDisplay as facadeAdviceForDisplay,
   ADVISOR_DECISION_SYSTEM as facadeAdvisorDecisionSystem,
+  ADVISOR_SYSTEM as facadeAdvisorSystem,
   advisorGitContextBudget as facadeAdvisorGitContextBudget,
   advisorInvocationGuidelines as facadeAdvisorInvocationGuidelines,
   advisorMessageText as facadeAdvisorMessageText,
   advisorRepositoryContext as facadeAdvisorRepositoryContext,
   advisorRequestConversation as facadeAdvisorRequestConversation,
   advisorSessionState as facadeAdvisorSessionState,
-  ADVISOR_SYSTEM as facadeAdvisorSystem,
   appendScoutLifecycleEntry as facadeAppendScoutLifecycleEntry,
   consultAdvisor as facadeConsultAdvisor,
   curateAdvisorConversation as facadeCurateAdvisorConversation,
@@ -91,12 +91,12 @@ import { gateFailureEffectForMode as leafGateFailureEffectForMode } from "../src
 import { parseAutomaticDecision as leafParseAutomaticDecision } from "../src/tools/gate-protocol.ts";
 import {
   ADVISOR_DECISION_SYSTEM as leafAdvisorDecisionSystem,
+  ADVISOR_SYSTEM as leafAdvisorSystem,
   advisorGitContextBudget as leafAdvisorGitContextBudget,
   advisorInvocationGuidelines as leafAdvisorInvocationGuidelines,
   advisorMessageText as leafAdvisorMessageText,
   advisorRepositoryContext as leafAdvisorRepositoryContext,
   advisorRequestConversation as leafAdvisorRequestConversation,
-  ADVISOR_SYSTEM as leafAdvisorSystem,
   gitContextNote as leafGitContextNote,
 } from "../src/tools/prompts.ts";
 import { registerAdvisorTool as leafRegisterAdvisorTool } from "../src/tools/registration.ts";

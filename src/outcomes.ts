@@ -20,10 +20,7 @@ export type OutcomeAdoption = "followed" | "not-followed" | "unknown";
 export type OutcomeValidation = "passed" | "failed" | "not-run" | "unknown";
 
 export type OutcomeTrigger =
-  | "manual"
-  | "executor-requested"
-  | "turn-gate"
-  | "repeated-tool-call";
+  "manual" | "executor-requested" | "turn-gate" | "repeated-tool-call";
 
 export const ADOPTIONS: OutcomeAdoption[] = [
   "followed",

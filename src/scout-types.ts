@@ -10,11 +10,7 @@ export const SCOUT_SELECTION_MAX_IDS = 32;
 export const SCOUT_SYNTHESIS_MAX_BYTES = 4 * 1024;
 
 export type ScoutGroupKind =
-  | "compaction"
-  | "user"
-  | "assistant"
-  | "tool-exchange"
-  | "pending-invocation";
+  "compaction" | "user" | "assistant" | "tool-exchange" | "pending-invocation";
 
 export interface ScoutContextGroup {
   bytes: number;

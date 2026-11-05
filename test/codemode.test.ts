@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
-import { Value } from "typebox/value";
+import { validateToolArguments } from "@earendil-works/pi-ai";
 
 import { executeCodemode } from "../node_modules/@earendil-works/pi-coding-agent/dist/extensions/codemode/execute.js";
+import { setAdvisorToolsEnabledRef } from "../src/config/state.ts";
 import { AdvisorSessionState } from "../src/session-state.ts";
 import { registerAdvisorTool } from "../src/tools.ts";
 import { assembleConsultationContext } from "../src/tools/consult-context.ts";
@@ -22,6 +23,11 @@ const harness = (
   const tools = new Map<string, any>();
   const events = new Map<string, any>();
   const session = new AdvisorSessionState();
+  // The enabled flag is module-global state; concurrent test files (for
+  // example config-storage's opt-out test) can leave it disabled while this
+  // file is still running, which blocks ask_advisor with "Advisor tools are
+  // disabled" instead of producing JSON output. Pin it explicitly.
+  setAdvisorToolsEnabledRef(true);
   registerAdvisorTool(
     mockPi({ activeTools: ["ask_advisor"], events, tools }),
     session,
@@ -76,19 +82,31 @@ const harness = (
             throw new Error(block.reason);
           }
 
-          if (!Value.Check(tool.parameters, args)) {
-            throw new Error("Invalid tool arguments");
-          }
+          const piTool = {
+            description: tool.description,
+            name: tool.name,
+            parameters: tool.parameters,
+          };
+
+          const toolCall = {
+            arguments: args,
+            id: toolCallId,
+            name,
+            type: "toolCall" as const,
+          };
+
+          const validatedArgs = validateToolArguments(piTool, toolCall);
 
           result = await tool.execute(
             toolCallId,
-            args,
+            validatedArgs,
             undefined,
             undefined,
             ctx
           );
-          expect(Value.Check(tool.outputSchema, result.structuredContent)).toBe(
-            true
+          validateToolArguments(
+            { ...piTool, parameters: tool.outputSchema },
+            { ...toolCall, arguments: result.structuredContent }
           );
         } catch (error) {
           isError = true;
@@ -149,6 +167,27 @@ const config = {
 };
 
 describe("native Pi Codemode Advisor composition", () => {
+  test("rejects invalid arguments through Pi's tool validator", async () => {
+    await withAgentDir(config, async (cwd) => {
+      const { tool } = harness(cwd);
+
+      const piTool = {
+        description: tool.description,
+        name: tool.name,
+        parameters: tool.parameters,
+      };
+
+      expect(() =>
+        validateToolArguments(piTool, {
+          arguments: { gitContext: "invalid" },
+          id: "invalid-call",
+          name: tool.name,
+          type: "toolCall",
+        })
+      ).toThrow('Validation failed for tool "ask_advisor"');
+    });
+  });
+
   test("receives existing response fields without changing interactive content or accounting", async () => {
     await withAgentDir(config, async (cwd) => {
       const h = harness(cwd);

@@ -39,7 +39,7 @@ describe("Jev turn-gate steer renderers", () => {
 
     const callLines = callBox
       .render(100)
-      .map((line: string) => line.replace(SGR_CODE, ""));
+      .map((line: string) => line.replaceAll(SGR_CODE, ""));
 
     expect(callLines.join("\n")).toContain("[advisor]");
     expect(callLines.join("\n")).toContain(
@@ -62,7 +62,7 @@ describe("Jev turn-gate steer renderers", () => {
 
     const resultLines = resultBox
       .render(100)
-      .map((line: string) => line.replace(SGR_CODE, ""));
+      .map((line: string) => line.replaceAll(SGR_CODE, ""));
 
     expect(resultLines.join("\n")).toContain("ADVISOR · TURN REVIEW");
     expect(resultLines.join("\n")).toContain("test/advisor");

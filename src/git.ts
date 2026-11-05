@@ -28,11 +28,7 @@ export const clampGitContextLevel = (
   LEVEL_RANK[requested] <= LEVEL_RANK[allowed] ? requested : allowed;
 
 type GitContextStatus =
-  | "disabled"
-  | "no-changes"
-  | "collected"
-  | "not-a-repository"
-  | "failed";
+  "disabled" | "no-changes" | "collected" | "not-a-repository" | "failed";
 
 export interface GitContextResult {
   /** Why collection produced nothing, for diagnostics. Never sent verbatim. */

@@ -100,13 +100,11 @@ const advisorProjectRules = (rules: ConsultationContext["projectRules"]) =>
     : undefined;
 
 const advisorImageNotice = (context: ConsultationContext) => {
-  if (
-    !(
-      context.imageOmissions ||
-      context.images.length ||
-      /\[Image[ :]/u.test(context.conversation)
-    )
-  ) {
+  if (!(
+    context.imageOmissions ||
+    context.images.length ||
+    /\[Image[ :]/u.test(context.conversation)
+  )) {
     return "";
   }
 
@@ -434,8 +432,7 @@ const collectAdvisorResponse = async (
   let prepared: PreparedAdvisorRequest | undefined;
 
   let resolvedPrimary:
-    | Awaited<ReturnType<typeof resolveConfiguredModel>>
-    | undefined;
+    Awaited<ReturnType<typeof resolveConfiguredModel>> | undefined;
 
   try {
     resolvedPrimary = await resolveConfiguredModel(

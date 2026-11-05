@@ -30,12 +30,7 @@ import { savedConfig, withAgentDir } from "./helpers/config-fixture.ts";
 import { mockPi } from "./helpers/mock-pi.ts";
 
 type JsonValue =
-  | boolean
-  | null
-  | number
-  | string
-  | JsonValue[]
-  | { [key: string]: JsonValue };
+  boolean | null | number | string | JsonValue[] | { [key: string]: JsonValue };
 
 // SAFETY: mock context exercises only hasUI-aware paths in this suite.
 const context = { hasUI: false } as any;
@@ -49,12 +44,19 @@ const readSavedConfig = () =>
   JSON.parse(readFileSync(configPath(), "utf-8")) as Record<string, JsonValue>;
 
 describe("Advisor config persistence", () => {
+  let advisorToolsEnabledSnapshot: boolean;
+
   beforeEach(() => {
     agentDir = mkdtempSync(join(tmpdir(), "pi-advisor-flow-test-"));
     process.env.PI_CODING_AGENT_DIR = agentDir;
+    advisorToolsEnabledSnapshot = getAdvisorSettings().advisorToolsEnabled;
   });
 
   afterEach(() => {
+    // setAdvisorToolsEnabledRef mutates module-global state that concurrently
+    // scheduled test files observe; restore it so the opt-out test cannot
+    // leak "disabled" into other suites.
+    setAdvisorToolsEnabledRef(advisorToolsEnabledSnapshot);
     resetConfigCache();
     rmSync(agentDir, { force: true, recursive: true });
 
@@ -77,6 +79,15 @@ describe("Advisor config persistence", () => {
     resetConfigCache();
     loadConfig(context);
     expect(getAdvisorSettings().advisorToolsEnabled).toBe(false);
+  });
+
+  test("loads and persists Advisor log feedback", () => {
+    writeFileSync(configPath(), JSON.stringify({ advisorLogFeedback: true }));
+    loadConfig(context);
+
+    expect(getAdvisorSettings().logFeedback).toBe(true);
+    saveConfig(context);
+    expect(readSavedConfig().advisorLogFeedback).toBe(true);
   });
 
   test("preserves external known and unknown edits during unrelated saves", () => {
@@ -384,7 +395,7 @@ describe("Advisor argument persistence", () => {
 describe("Config schema consistency", () => {
   test("every AdvisorConfig key has exactly one schema entry", () => {
     // Compile-time coverage (satisfies Record<keyof AdvisorConfig, ...>)
-    // guarantees no missing or extra keys; this pins the exact 51-key set.
+    // guarantees no missing or extra keys; this pins the exact 52-key set.
     const schemaKeys = Object.keys(CONFIG_SCHEMA).toSorted();
     expect(schemaKeys).toEqual([
       "advisor",
@@ -415,6 +426,7 @@ describe("Config schema consistency", () => {
       "advisorJevTransport",
       "advisorJevTurnGateEveryTurns",
       "advisorJevTurnGateNoulThreshold",
+      "advisorLogFeedback",
       "advisorLoopThreshold",
       "advisorMaxCallsPerSession",
       "advisorModelWhitelist",
@@ -472,6 +484,7 @@ describe("Config schema consistency", () => {
       "advisorJevTransport",
       "advisorJevTurnGateEveryTurns",
       "advisorJevTurnGateNoulThreshold",
+      "advisorLogFeedback",
       "advisorLoopThreshold",
       "advisorMaxCallsPerSession",
       "advisorModelWhitelist",
@@ -495,7 +508,7 @@ describe("Config schema consistency", () => {
       "showUsageFooter",
       "simpleMode",
     ]);
-    expect(SAVED_CONFIG_KEYS).toHaveLength(50);
+    expect(SAVED_CONFIG_KEYS).toHaveLength(51);
     expect(CONFIG_SCHEMA.advisorOutcomeLogging.persisted).toBe(false);
   });
 });

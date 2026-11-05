@@ -15,7 +15,7 @@ import {
   validateBenchmarkConfig,
   validatePricing,
 } from "../src/config.ts";
-import { CostMeter, configuredCost, normalizeUsage } from "../src/cost.ts";
+import { configuredCost, CostMeter, normalizeUsage } from "../src/cost.ts";
 import { hashTree } from "../src/fixture.ts";
 import {
   assertPinnedLiveModelConfiguration,

@@ -20,9 +20,7 @@ export type GateDecision = "proceed" | "revise" | "blocked";
 export type ConsultationTrigger = "manual" | "executor-requested" | "turn-gate";
 
 export type GateTrigger =
-  | "repeated-tool-call"
-  | "completion-review"
-  | "custom-rule";
+  "repeated-tool-call" | "completion-review" | "custom-rule";
 
 type AdvisorTrigger = ConsultationTrigger | GateTrigger;
 

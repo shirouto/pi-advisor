@@ -9,7 +9,7 @@ bun install
 bun run build
 ```
 
-Use Bun 1.4.3 or newer; the repository's `preinstall` check rejects older versions unless lifecycle scripts are disabled. The check skips packed installs, so package consumers don't need Bun. `bun run typecheck` uses the `bun check` command.
+Use Bun 1.4.4 or newer; the repository's `preinstall` check rejects older versions unless lifecycle scripts are disabled. The check skips packed installs, so package consumers don't need Bun. `bun run typecheck` uses the `bun check` command.
 
 Pi loads `dist/index.js`, which bundles internal modules so settings controls and persistence share the same runtime state. Run `bun run build` once after checkout, then reload Pi. The pre-commit hook rebuilds and stages the bundle after linting source changes; `prepack` also rebuilds it for npm packaging.
 
@@ -28,6 +28,8 @@ bun run package:check
 bun audit --audit-level=high
 git -c diff.stat=false diff --no-ext-diff --check --no-stat
 ```
+
+`bun run format` formats the project with Bun's native formatter; `bun run format:check` verifies it. The pre-commit hook uses lint-staged to run Bun fmt and Oxlint on staged files while preserving partially staged changes.
 
 `bun test` covers the normal suite. Run `bun run test:bench` for the repository-only benchmark tests.
 

@@ -46,8 +46,7 @@ export class JevFilterSubmenu implements Component, Focusable {
   private classifierAvailable = false;
   private readonly modelRegistry: JevClassifierRegistryAccess | undefined;
   private readonly resolveClassifierKey:
-    | (() => Promise<JevClassifierKeySnapshot>)
-    | undefined;
+    (() => Promise<JevClassifierKeySnapshot>) | undefined;
   private _focused = true;
 
   constructor(options: JevFilterSubmenuOptions) {

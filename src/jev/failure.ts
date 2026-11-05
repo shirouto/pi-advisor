@@ -1,9 +1,5 @@
 export type JevErrorCategory =
-  | "auth"
-  | "timeout"
-  | "network"
-  | "malformed"
-  | "error";
+  "auth" | "timeout" | "network" | "malformed" | "error";
 
 /** A classified, redacted Jev failure; never carries key material. */
 export class JevFailureError extends Error {

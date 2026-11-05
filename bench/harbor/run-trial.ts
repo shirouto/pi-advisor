@@ -98,10 +98,7 @@ const isObject = (value: unknown): value is JsonObject =>
 const own = (value: JsonObject, key: string) => Object.hasOwn(value, key);
 
 export type HarborInfrastructureFailureCategory =
-  | "docker-build"
-  | "image-pull"
-  | "git-transport"
-  | "network-transport";
+  "docker-build" | "image-pull" | "git-transport" | "network-transport";
 
 const errorText = (error: unknown) => {
   const seen = new Set<object>();
@@ -967,13 +964,11 @@ const validateTrialIdentity = (
   const modelInfo = isObject(trial.agent_info)
     ? trial.agent_info.model_info
     : undefined;
-  if (
-    !(
-      isObject(modelInfo) &&
-      typeof modelInfo.provider === "string" &&
-      typeof modelInfo.name === "string"
-    )
-  ) {
+  if (!(
+    isObject(modelInfo) &&
+    typeof modelInfo.provider === "string" &&
+    typeof modelInfo.name === "string"
+  )) {
     throw new Error("Harbor result is missing its resolved agent model pin.");
   }
   const reportedModel = `${modelInfo.provider}/${modelInfo.name}`;
@@ -1026,21 +1021,19 @@ export const validateHarborArtifacts = (
   const finalAttestation = records
     .filter((record) => record.kind === "attestation")
     .at(-1);
-  if (
-    !(
-      finalAttestation &&
-      sameJsonFields(finalAttestation, attestation, [
-        "adapter",
-        "advisorCalls",
-        "extension",
-        "extensionVersion",
-        "loaded",
-        "mode",
-        "shutdown",
-        "smokeProtocol",
-      ])
-    )
-  ) {
+  if (!(
+    finalAttestation &&
+    sameJsonFields(finalAttestation, attestation, [
+      "adapter",
+      "advisorCalls",
+      "extension",
+      "extensionVersion",
+      "loaded",
+      "mode",
+      "shutdown",
+      "smokeProtocol",
+    ])
+  )) {
     throw new Error(
       "Harbor attestation artifact does not match its final record."
     );

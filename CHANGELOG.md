@@ -6,9 +6,38 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## Unreleased
 
+## 0.14.4 - 2026-11-03
+
+### Added
+
+- Added an opt-in **Advisor log feedback** setting in `/advisor-settings`; budget and Scout status messages are off by default while actual Advisor calls/results and budget enforcement remain unchanged.
+
 ### Changed
 
-- Updated Oxfmt to 0.74.0.
+- Updated development dependencies: Pi packages (`pi-ai`, `pi-coding-agent`, and `pi-tui`) to 1.5.0 and Ultracite to 8.1.1. Pi 1.5 adds extension-update changelogs and faster streaming; tool argument validation now uses `pi-schema`, so TypeBox-only features outside JSON Schema are no longer applied to tool arguments.
+- Updated Knip to 6.44.1. Bun 1.4.4 remains the latest stable version.
+
+## 0.14.3 - 2026-10-26
+
+### Changed
+
+- Updated development dependencies: Knip to 6.43.0 and Ultracite to 8.1.0.
+
+### Fixed
+
+- Updated the `undici` override to 8.12.2 to resolve reported security vulnerabilities.
+- Updated the required Bun version to 1.4.4, Pi development dependencies to 1.4.0, and TypeBox to 1.4.3; replaced Oxfmt with Bun's native formatter and kept lint-staged for safe staged-file handling.
+
+## 0.14.2 - 2026-10-21
+
+### Changed
+
+- Updated Oxfmt to 0.74.0, Oxlint and plugins to 1.89.0, and Knip to 6.42.1; adjusted tests for the updated Oxlint rules.
+
+### Fixed
+
+- Let a long-running Pi use fresh Herdr sequence numbers for later consultation cleanup, preserving its sequence watermark across module reloads.
+- Prevent ordinary, benchmark, and Node loader tests from sending reports or notifications to an inherited Herdr pane.
 
 ### Fixed
 

@@ -200,8 +200,7 @@ const runRealFollowUp = async (
   );
   const context = replayContext(cwd, fixture, timestamp, model);
   let capturedPayload:
-    | { adviceId: string; payload: AdvisorFollowUpPayload }
-    | undefined;
+    { adviceId: string; payload: AdvisorFollowUpPayload } | undefined;
   const first = await consultAdvisor(
     context,
     "Review the replay fixture.",

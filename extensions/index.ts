@@ -2,7 +2,7 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 import { registerCommands } from "../src/commands/registration.ts";
 import { getAdvisorSettings } from "../src/config/state.ts";
-import { HerdrAdvisorBlock, herdrAdvisorActivity } from "../src/herdr.ts";
+import { herdrAdvisorActivity, HerdrAdvisorBlock } from "../src/herdr.ts";
 import { AdvisorSessionState } from "../src/session-state.ts";
 import {
   consultAdvisor as consultAdvisorImplementation,
