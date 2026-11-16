@@ -1,12 +1,12 @@
-import { isRecordOf, isString } from "./content-utils.ts";
-import type { JsonValue } from "./content-utils.ts";
 import { AdvisorFollowUpCache } from "./follow-up.ts";
 import type {
   AdvisorFollowUpLookup,
   AdvisorFollowUpPayload,
 } from "./follow-up.ts";
+import { t } from "./i18n.ts";
 import { AdvisorJevLedgerState } from "./jev/ledger.ts";
 import type { AdvisorJevUsage } from "./jev/ledger.ts";
+import { normalizedToolSignature } from "./tool-input-normalization.ts";
 import {
   addAdvisorUsage,
   emptyAdvisorUsageTotals,
@@ -14,6 +14,13 @@ import {
   formatAdvisorUsageTotals,
 } from "./usage.ts";
 import type { AdvisorUsageTotals } from "./usage.ts";
+
+export {
+  normalizeToolInput,
+  normalizedToolSignature,
+} from "./tool-input-normalization.ts";
+
+export type { NormalizedToolInput } from "./tool-input-normalization.ts";
 
 export type GateDecision = "proceed" | "revise" | "blocked";
 
@@ -37,123 +44,6 @@ export interface AdvisorInvocationRecord {
   trigger: AdvisorTrigger;
   usage?: unknown;
 }
-
-const WHITESPACE = /\s/u;
-
-const TIMESTAMP_KEYS = new Set([
-  "createdat",
-  "date",
-  "datetime",
-  "time",
-  "timestamp",
-  "updatedat",
-]);
-
-const REQUEST_ID_KEYS = new Set(["correlationid", "requestid", "traceid"]);
-
-const normalizedKey = (key: string) =>
-  key.replaceAll(/[-_]/gu, "").toLowerCase();
-
-const isVolatileKey = (key: string, keys: Set<string>) =>
-  keys.has(normalizedKey(key));
-
-const normalizeShellWhitespace = (command: string) => {
-  let result = "";
-  let quote: "'" | '"' | "`" | undefined;
-  let pendingSpace = false;
-
-  for (const char of command.trim()) {
-    if (quote) {
-      result += char;
-
-      if (char === quote) {
-        quote = undefined;
-      }
-
-      continue;
-    }
-
-    if (char === "'" || char === '"' || char === "`") {
-      if (pendingSpace && result) {
-        result += " ";
-      }
-
-      pendingSpace = false;
-      quote = char;
-      result += char;
-    } else if (WHITESPACE.test(char)) {
-      pendingSpace = true;
-    } else {
-      if (pendingSpace && result) {
-        result += " ";
-      }
-
-      pendingSpace = false;
-      result += char;
-    }
-  }
-
-  return result;
-};
-
-const normalizeString = (value: string) =>
-  value
-    .replaceAll(/\/(?:private\/)?tmp\/[^\s/]+/gu, "/tmp/<temporary>")
-    .replaceAll(/\/var\/folders\/[^\s/]+/gu, "/var/folders/<temporary>");
-
-export type NormalizedToolInput =
-  | JsonValue
-  | undefined
-  | NormalizedToolInput[]
-  | { [key: string]: NormalizedToolInput };
-
-export const normalizeToolInput = <Input>(
-  toolName: string,
-  input: Input
-): NormalizedToolInput => {
-  const visit = (
-    value: NormalizedToolInput,
-    key?: string
-  ): NormalizedToolInput => {
-    if (isString(value)) {
-      if (key && isVolatileKey(key, TIMESTAMP_KEYS)) {
-        return "<timestamp>";
-      }
-
-      if (key && isVolatileKey(key, REQUEST_ID_KEYS)) {
-        return "<request-id>";
-      }
-
-      const normalized = normalizeString(value);
-
-      return toolName === "bash" && key === "command"
-        ? normalizeShellWhitespace(normalized)
-        : normalized;
-    }
-
-    if (Array.isArray(value)) {
-      return value.map((item) => visit(item));
-    }
-
-    if (isRecordOf(value)) {
-      return Object.fromEntries(
-        Object.keys(value)
-          .toSorted()
-          .map((childKey) => [childKey, visit(value[childKey], childKey)])
-      );
-    }
-
-    return value;
-  };
-
-  // SAFETY: Pi tool inputs are JSON-decoded tool arguments, so the root value is already NormalizedToolInput-shaped.
-  return visit(input as Input & NormalizedToolInput);
-};
-
-export const normalizedToolSignature = <Input>(
-  toolName: string,
-  input: Input
-) => `${toolName}:${JSON.stringify(normalizeToolInput(toolName, input))}`;
 
 interface RepetitionState {
   count: number;
@@ -487,7 +377,7 @@ export class AdvisorSessionState {
       }
     }
 
-    return parts.join(", ") || "none";
+    return parts.join(", ") || t("sessionSummary.none", "none");
   }
 
   #countTrigger(trigger: AdvisorTrigger) {
@@ -508,7 +398,7 @@ export class AdvisorSessionState {
         ] as const
       )
         .filter((trigger) => this.#countTrigger(trigger) > 0)
-        .join(", ") || "none"
+        .join(", ") || t("sessionSummary.none", "none")
     );
   }
 
@@ -570,27 +460,27 @@ export class AdvisorSessionState {
     const models =
       [...new Set(invocations.map((item) => item.model).filter(Boolean))].join(
         ", "
-      ) || "unknown";
+      ) || t("sessionSummary.models.unknown", "unknown");
 
     const budget =
       limit === undefined
-        ? `${this.#consumedCalls} used; unlimited remaining`
-        : `${this.#consumedCalls} / ${limit} used; ${Math.max(0, limit - this.#consumedCalls)} remaining`;
+        ? `${this.#consumedCalls} ${t("sessionSummary.budget.used", "used")}; ${t("sessionSummary.budget.unlimitedRemaining", "unlimited remaining")}`
+        : `${this.#consumedCalls} / ${limit} ${t("sessionSummary.budget.used", "used")}; ${Math.max(0, limit - this.#consumedCalls)} ${t("sessionSummary.budget.remaining", "remaining")}`;
 
     return [
-      "[Session Advisor Summary]",
-      `Consultations: ${markdown.length} Markdown (${this.#countTrigger("manual")} manual, ${this.#countTrigger("executor-requested")} executor-requested), automatic gates: ${gates.length}`,
-      `Triggers: ${this.#triggersLine()}`,
-      `Models: ${models}`,
-      `Budget: ${budget}`,
-      `Usage: ${formatAdvisorUsageTotals(totals)}`,
-      `Markdown advice: ${markdown.length} responses (${this.#ledger.draftConsultations} with drafts)`,
-      `Follow-ups: ${markdown.filter((item) => item.followUp).length}`,
-      `Outcome reports: ${this.#ledger.outcomes}`,
-      `Gate decisions: ${this.#decisionsLine()}`,
-      `Loop matching: normalized tool signatures; ${this.#repetition.interventions} gate intervention${this.#repetition.interventions === 1 ? "" : "s"}`,
-      `Execution effects: ${effects("tool-blocked")} tool blocked, ${effects("session-blocked")} sessions blocked, ${effects("continued")} continued`,
-      `Failures: ${failures.length ? failures.join(", ") : "none"}`,
+      t("sessionSummary.title", "[Session Advisor Summary]"),
+      `${t("sessionSummary.consultations.label", "Consultations:")} ${markdown.length} ${t("sessionSummary.consultations.markdown", "Markdown")} (${this.#countTrigger("manual")} ${t("sessionSummary.consultations.manual", "manual")}, ${this.#countTrigger("executor-requested")} ${t("sessionSummary.consultations.executorRequested", "executor-requested")}), ${t("sessionSummary.consultations.automaticGates", "automatic gates:")} ${gates.length}`,
+      `${t("sessionSummary.triggers.label", "Triggers:")} ${this.#triggersLine()}`,
+      `${t("sessionSummary.models.label", "Models:")} ${models}`,
+      `${t("sessionSummary.budget.label", "Budget:")} ${budget}`,
+      `${t("sessionSummary.usage.label", "Usage:")} ${formatAdvisorUsageTotals(totals)}`,
+      `${t("sessionSummary.markdownAdvice.label", "Markdown advice:")} ${markdown.length} ${t("sessionSummary.markdownAdvice.responses", "responses")} (${this.#ledger.draftConsultations} ${t("sessionSummary.markdownAdvice.withDrafts", "with drafts")})`,
+      `${t("sessionSummary.followUps.label", "Follow-ups:")} ${markdown.filter((item) => item.followUp).length}`,
+      `${t("sessionSummary.outcomeReports.label", "Outcome reports:")} ${this.#ledger.outcomes}`,
+      `${t("sessionSummary.gateDecisions.label", "Gate decisions:")} ${this.#decisionsLine()}`,
+      `${t("sessionSummary.loopMatching.label", "Loop matching: normalized tool signatures;")} ${this.#repetition.interventions} ${t("sessionSummary.loopMatching.gateIntervention", "gate intervention")}${this.#repetition.interventions === 1 ? "" : "s"}`,
+      `${t("sessionSummary.executionEffects.label", "Execution effects:")} ${effects("tool-blocked")} ${t("sessionSummary.executionEffects.toolBlocked", "tool blocked")}, ${effects("session-blocked")} ${t("sessionSummary.executionEffects.sessionsBlocked", "sessions blocked")}, ${effects("continued")} ${t("sessionSummary.executionEffects.continued", "continued")}`,
+      `${t("sessionSummary.failures.label", "Failures:")} ${failures.length ? failures.join(", ") : t("sessionSummary.none", "none")}`,
       ...jevLines,
     ].join("\n");
   }

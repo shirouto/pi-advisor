@@ -1,6 +1,12 @@
 import { describe, expect, test } from "bun:test";
 
 import { InMemoryCredentialStore } from "@earendil-works/pi-ai";
+import type {
+  Api,
+  Context,
+  Model,
+  SimpleStreamOptions,
+} from "@earendil-works/pi-ai/compat";
 import { ModelRegistry, ModelRuntime } from "@earendil-works/pi-coding-agent";
 
 import {
@@ -9,6 +15,7 @@ import {
   resolveConfiguredModel,
 } from "../src/model-stream.ts";
 import type { CoalescedUpdateScheduler } from "../src/model-stream.ts";
+import { currentSessionId } from "../src/session-context.ts";
 import { asExtensionContext } from "./helpers/extension-context.ts";
 
 // SAFETY: fixture mirrors the catalogue fields stream() reads; "test-api" is a synthetic Api label.
@@ -24,6 +31,23 @@ const model = {
   provider: "provider",
   reasoning: true,
 } as any;
+
+type MockModelAuth = {
+  apiKey?: string;
+  headers?: Record<string, string | null>;
+} & ({ ok: true } | { error: string; ok: false });
+
+const resolveWithAuth = (auth: MockModelAuth) =>
+  resolveConfiguredModel(
+    asExtensionContext({
+      modelRegistry: {
+        find: () => model,
+        getApiKeyAndHeaders: () => Promise.resolve(auth),
+      },
+    }),
+    "provider/model",
+    "Scout"
+  );
 
 interface StreamUsageFixture {
   input: number;
@@ -47,6 +71,7 @@ interface FakeStreamOptions {
   headers?: Record<string, string | null>;
   reasoning?: string;
   reasoningEffort?: string;
+  sessionId?: string;
   signal?: AbortSignal;
 }
 
@@ -235,7 +260,67 @@ describe("model stream", () => {
     });
   });
 
-  test("reports missing models and auth without substitution", async () => {
+  test("forwards header-only provider auth to legacy streams", async () => {
+    const headers = { "x-provider-token": "configured-token" };
+    let streamOptions: FakeStreamOptions | undefined;
+
+    const runtime = await ModelRuntime.create({
+      credentials: new InMemoryCredentialStore(),
+      modelsPath: null,
+      refreshOnCreate: false,
+    });
+
+    const registry = new ModelRegistry(runtime);
+    registry.registerProvider("provider", {
+      api: "test-api",
+      authHeader: false,
+      headers,
+      models: [model],
+      streamSimple: () => fakeStream([], assistant("unused"))(),
+    });
+
+    const ctx = asExtensionContext({
+      modelRegistry: {
+        find: registry.find.bind(registry),
+        getApiKeyAndHeaders: registry.getApiKeyAndHeaders.bind(registry),
+        streamSimple: undefined,
+      },
+    });
+
+    const resolved = await resolveConfiguredModel(
+      ctx,
+      "provider/model",
+      "Advisor"
+    );
+
+    const result = await collectTextStream(
+      resolved,
+      { messages: [], systemPrompt: "sys" },
+      fakeStream([], assistant("header-auth advice"), (options) => {
+        streamOptions = options;
+      })
+    );
+
+    expect(resolved).toMatchObject({ apiKey: undefined, headers });
+
+    expect(streamOptions).toMatchObject({ apiKey: undefined, headers });
+
+    expect(result.text).toBe("header-auth advice");
+  });
+
+  test("accepts usable headers with a whitespace-only API key", async () => {
+    const headers = { token: "value" };
+
+    const resolved = await resolveWithAuth({
+      apiKey: "   ",
+      headers,
+      ok: true,
+    });
+
+    expect(resolved).toMatchObject({ apiKey: "   ", headers });
+  });
+
+  test("reports missing models and unusable auth without substitution", async () => {
     await expect(
       resolveConfiguredModel(
         asExtensionContext({ modelRegistry: { find: () => undefined } }),
@@ -243,19 +328,29 @@ describe("model stream", () => {
         "Scout"
       )
     ).rejects.toThrow("Scout model not found: provider/missing");
+
     await expect(
-      resolveConfiguredModel(
-        asExtensionContext({
-          modelRegistry: {
-            find: () => model,
-            getApiKeyAndHeaders: () =>
-              Promise.resolve({ error: "login", ok: false }),
-          },
-        }),
-        "provider/model",
-        "Scout"
-      )
+      resolveWithAuth({
+        error: "login",
+        headers: { token: "value" },
+        ok: false,
+      })
     ).rejects.toThrow("login");
+
+    const unusableAuthResults: MockModelAuth[] = [
+      { apiKey: "   ", ok: true },
+      { ok: true },
+      { headers: {}, ok: true },
+      { headers: { token: null }, ok: true },
+      { headers: { token: "" }, ok: true },
+      { headers: { token: "   " }, ok: true },
+    ];
+
+    for (const auth of unusableAuthResults) {
+      await expect(resolveWithAuth(auth)).rejects.toThrow(
+        "No API key for provider/model"
+      );
+    }
   });
 
   test("preserves stream options, chunk order, final text, and usage", async () => {
@@ -496,6 +591,84 @@ describe("model stream", () => {
     ).rejects.toThrow("Unsupported Advisor reasoning level: unsupported");
   });
 
+  test("routes a keyless virtual model through its physical provider", async () => {
+    const runtime = await ModelRuntime.create({
+      credentials: new InMemoryCredentialStore(),
+      modelsPath: null,
+      refreshOnCreate: false,
+    });
+
+    const registry = new ModelRegistry(runtime);
+    let routedApiKey: string | undefined;
+
+    registry.registerProvider("provider", {
+      api: "test-api",
+      apiKey: "PHYSICAL-KEY",
+      models: [model],
+      streamSimple: (physicalModel, context, options) => {
+        routedApiKey = options?.apiKey;
+
+        return fakeStream([], assistant("routed advice"))(
+          physicalModel,
+          context,
+          options
+        );
+      },
+    });
+    registry.registerVirtualModel({
+      id: "auto",
+      name: "Auto",
+      provider: "router",
+      route: () => ({ model, thinkingLevel: "off" }),
+    });
+
+    const resolved = await resolveConfiguredModel(
+      asExtensionContext({ modelRegistry: registry }),
+      "router/auto",
+      "Advisor"
+    );
+
+    const result = await collectTextStream(resolved, {
+      messages: [],
+      systemPrompt: "system",
+    });
+
+    expect(resolved.model.api).toBe("pi-virtual");
+    expect(result.text).toBe("routed advice");
+    expect(routedApiKey).toBe("PHYSICAL-KEY");
+  });
+
+  test("rejects virtual models when registry streaming is unavailable", async () => {
+    const virtualModel = {
+      ...model,
+      api: "pi-virtual",
+      id: "auto",
+      provider: "router",
+    };
+
+    let authLookups = 0;
+
+    const ctx = asExtensionContext({
+      modelRegistry: {
+        find: () => virtualModel,
+        getApiKeyAndHeaders: () => {
+          authLookups += 1;
+
+          return Promise.resolve({ apiKey: undefined, ok: true });
+        },
+        streamSimple: undefined,
+      },
+    });
+
+    await expect(
+      resolveConfiguredModel(ctx, "router/auto", "Advisor")
+    ).rejects.toThrow(
+      "Pi virtual model router/auto requires modelRegistry.streamSimple, which is unavailable in this Pi runtime. Update Pi or select a physical Advisor model."
+    );
+
+    expect(authLookups).toBe(0);
+  });
+
   test("surfaces registry auth errors without calling the provider wrapper", async () => {
     const previousEnvValue = process.env.PI_ADVISOR_TEST_MISSING_STREAM_KEY;
     delete process.env.PI_ADVISOR_TEST_MISSING_STREAM_KEY;
@@ -542,8 +715,86 @@ describe("model stream", () => {
     }
   });
 
+  test("reads the session id for each stream request", async () => {
+    let sessionId = "session-a";
+    const sessionIds: (string | undefined)[] = [];
+
+    const ctx = asExtensionContext({
+      modelRegistry: {
+        find: () => model,
+        streamSimple: (
+          _model: Model<Api>,
+          _context: Context,
+          options?: SimpleStreamOptions
+        ) => {
+          sessionIds.push(options?.sessionId);
+
+          return fakeStream([], assistant("advice"))();
+        },
+      },
+      sessionManager: { getSessionId: () => sessionId },
+    });
+
+    const resolved = await resolveConfiguredModel(
+      ctx,
+      "provider/model",
+      "Advisor"
+    );
+
+    await collectTextStream(resolved, {
+      messages: [],
+      sessionId: currentSessionId(ctx),
+      systemPrompt: "sys",
+    });
+
+    sessionId = "session-b";
+
+    await collectTextStream(resolved, {
+      messages: [],
+      sessionId: currentSessionId(ctx),
+      systemPrompt: "sys",
+    });
+
+    expect(sessionIds).toEqual(["session-a", "session-b"]);
+  });
+
+  test("streams without a session id when the host has no accessor", async () => {
+    let capturedOptions: SimpleStreamOptions | undefined;
+
+    const ctx = asExtensionContext({
+      modelRegistry: {
+        find: () => model,
+        streamSimple: (
+          _model: Model<Api>,
+          _context: Context,
+          options?: SimpleStreamOptions
+        ) => {
+          capturedOptions = options;
+
+          return fakeStream([], assistant("advice"))();
+        },
+      },
+      sessionManager: {},
+    });
+
+    const resolved = await resolveConfiguredModel(
+      ctx,
+      "provider/model",
+      "Advisor"
+    );
+
+    const result = await collectTextStream(resolved, {
+      messages: [],
+      sessionId: currentSessionId(ctx),
+      systemPrompt: "sys",
+    });
+
+    expect(capturedOptions?.sessionId).toBeUndefined();
+    expect(result.text).toBe("advice");
+  });
+
   test("uses compat streaming only when the registry has no streamSimple", async () => {
-    let capturedOptions: any;
+    let capturedOptions: FakeStreamOptions | undefined;
 
     const ctx = asExtensionContext({
       modelRegistry: {
@@ -552,6 +803,7 @@ describe("model stream", () => {
           Promise.resolve({ apiKey: "legacy-key", ok: true }),
         streamSimple: undefined,
       },
+      sessionManager: { getSessionId: () => "session-1" },
     });
 
     const resolved = await resolveConfiguredModel(
@@ -562,7 +814,12 @@ describe("model stream", () => {
 
     const result = await collectTextStream(
       resolved,
-      { messages: [], reasoning: "medium", systemPrompt: "system" },
+      {
+        messages: [],
+        reasoning: "medium",
+        sessionId: currentSessionId(ctx),
+        systemPrompt: "system",
+      },
       fakeStream([], assistant("legacy stream"), (options) => {
         capturedOptions = options;
       })
@@ -572,6 +829,7 @@ describe("model stream", () => {
       apiKey: "legacy-key",
       reasoning: "medium",
       reasoningEffort: "medium",
+      sessionId: "session-1",
     });
     expect(result.text).toBe("legacy stream");
   });

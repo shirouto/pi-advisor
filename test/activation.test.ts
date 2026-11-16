@@ -2,7 +2,12 @@ import { describe, expect, test } from "bun:test";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { initTheme } from "@earendil-works/pi-coding-agent";
+import { InMemoryCredentialStore } from "@earendil-works/pi-ai";
+import {
+  initTheme,
+  ModelRegistry,
+  ModelRuntime,
+} from "@earendil-works/pi-coding-agent";
 
 import { registerCommands } from "../src/commands.ts";
 import {
@@ -240,6 +245,120 @@ describe("Advisor activation flow", () => {
 
         expect(customCalls).toBe(0);
         expect(pi.getActiveTools()).toContain("ask_advisor");
+      }
+    );
+  });
+
+  test("activates a keyless virtual Advisor from a real Pi registry", async () => {
+    await withAgentDir({ advisor: "router/auto" }, async (agentDir) => {
+      const { commands, pi } = activationHarness();
+
+      const runtime = await ModelRuntime.create({
+        credentials: new InMemoryCredentialStore(),
+        modelsPath: null,
+        refreshOnCreate: false,
+      });
+
+      const registry = new ModelRegistry(runtime);
+
+      registry.registerVirtualModel({
+        id: "auto",
+        name: "Auto",
+        provider: "router",
+        route: () => {
+          throw new Error("Activation must not route the model");
+        },
+      });
+
+      await registry.refresh();
+
+      const ctx = asExtensionContext({
+        cwd: agentDir,
+        hasUI: true,
+        isProjectTrusted: () => false,
+        modelRegistry: registry,
+        ui: { notify: () => {} },
+      });
+
+      expect(
+        registry.getAvailable().map((model) => `${model.provider}/${model.id}`)
+      ).toContain("router/auto");
+      const availableVirtualModel = registry.find("router", "auto");
+
+      if (!availableVirtualModel) {
+        throw new Error("Registered virtual model is missing");
+      }
+
+      expect(
+        await registry.getApiKeyAndHeaders(availableVirtualModel)
+      ).toMatchObject({ apiKey: undefined, ok: true });
+
+      registerCommands(pi);
+      await commands.get("advisor").handler("", ctx);
+
+      expect(savedConfig(agentDir).advisor).toBe("router/auto");
+
+      expect(pi.getActiveTools()).toContain("ask_advisor");
+    });
+  });
+
+  test("activates an Advisor with header-only provider auth", async () => {
+    await withAgentDir({ advisor: "provider/advisor" }, async (agentDir) => {
+      const { commands, pi } = activationHarness();
+      const headers = { "x-provider-token": "configured-token" };
+      const model = { id: "advisor", provider: "provider" };
+
+      const ctx = asExtensionContext({
+        cwd: agentDir,
+        hasUI: true,
+        isProjectTrusted: () => false,
+        modelRegistry: {
+          find: () => model,
+          getApiKeyAndHeaders: () => Promise.resolve({ headers, ok: true }),
+          getAvailable: () => [model],
+        },
+        ui: { notify: () => {} },
+      });
+
+      registerCommands(pi);
+      await commands.get("advisor").handler("", ctx);
+
+      expect(savedConfig(agentDir).advisor).toBe("provider/advisor");
+
+      expect(pi.getActiveTools()).toContain("ask_advisor");
+    });
+  });
+
+  test("does not activate when header auth resolution fails", async () => {
+    await withAgentDir(
+      { advisor: "provider/advisor", advisorToolsEnabled: false },
+      async (agentDir) => {
+        const { commands, pi, setActiveTools } = activationHarness();
+        const model = { id: "advisor", provider: "provider" };
+        setActiveTools(["read"]);
+
+        const ctx = asExtensionContext({
+          cwd: agentDir,
+          hasUI: true,
+          isProjectTrusted: () => false,
+          modelRegistry: {
+            find: () => model,
+            getApiKeyAndHeaders: () =>
+              Promise.resolve({
+                error: "provider auth rejected",
+                headers: { "x-provider-token": "configured-token" },
+                ok: false,
+              }),
+            getAvailable: () => [model],
+          },
+          ui: { notify: () => {} },
+        });
+
+        registerCommands(pi);
+        await commands.get("advisor").handler("", ctx);
+
+        expect(savedConfig(agentDir).advisorToolsEnabled).toBe(false);
+        expect(pi.getActiveTools()).toEqual(["read"]);
       }
     );
   });

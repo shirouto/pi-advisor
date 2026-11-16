@@ -1,6 +1,6 @@
 {
   "name": "pi-advisor-flow",
-  "version": "0.14.4",
+  "version": "0.15.1",
   "description": "Advanced Executor/Advisor flow for Pi, fully configurable and extendable.",
   "keywords": [
     "advisor",
@@ -20,7 +20,15 @@
   },
   "files": [
     "dist",
+    "docs/benchmark.md",
+    "docs/configuration.md",
+    "docs/development.md",
+    "docs/herdr.md",
+    "docs/privacy.md",
+    "docs/README.md",
     "extensions",
+    "locales",
+    "skills",
     "src",
     "scripts/check-bun-version.mjs",
     "CHANGELOG.md",
@@ -36,7 +44,7 @@
     "bench:evaluate": "bun bench/src/cli.ts evaluate",
     "bench:replay": "bun bench/src/cli.ts replay",
     "bench:screen": "bun bench/src/cli.ts screen",
-    "build": "bun build ./extensions/index.ts --outfile dist/index.js --target node --format esm --external @earendil-works/pi-ai --external @earendil-works/pi-coding-agent --external @earendil-works/pi-tui --external typebox",
+    "build": "bun build ./extensions/index.ts --outfile dist/index.js --target node --format esm --external @earendil-works/pi-ai --external @earendil-works/pi-coding-agent --external @earendil-works/pi-tui --external @juicesharp/rpiv-i18n --external @juicesharp/rpiv-i18n/loader --external typebox",
     "check:boundaries": "node scripts/check-module-boundaries.mjs",
     "format": "bun fmt --no-script --print-width 80 --trailing-comma es5 --sort-imports --bracket-same-line --ignore-pattern 'bench/tasks/**/traps.toml' --ignore-pattern 'dist/**'",
     "knip": "knip",
@@ -54,25 +62,27 @@
     "format:check": "bun fmt --no-script --print-width 80 --trailing-comma es5 --sort-imports --bracket-same-line --ignore-pattern 'bench/tasks/**/traps.toml' --ignore-pattern 'dist/**' --check"
   },
   "devDependencies": {
-    "@earendil-works/pi-ai": "1.5.0",
-    "@earendil-works/pi-coding-agent": "1.5.0",
-    "@earendil-works/pi-tui": "1.5.0",
-    "@oxlint/plugins": "1.90.0",
+    "@earendil-works/pi-ai": "1.5.2",
+    "@earendil-works/pi-coding-agent": "1.5.2",
+    "@earendil-works/pi-tui": "1.5.2",
+    "@juicesharp/rpiv-i18n": "2.15.0",
+    "@oxlint/plugins": "1.93.0",
     "@types/node": "^26.6.6",
     "@typesafe-ai/sdk": "^0.7.0",
     "bun-types": "1.4.4",
     "husky": "^9.1.7",
-    "knip": "6.44.1",
+    "knip": "6.45.1",
     "lint-staged": "^17.6.0",
-    "oxlint": "1.90.0",
-    "typebox": "1.4.3",
+    "oxlint": "1.93.0",
+    "typebox": "1.4.6",
     "typescript": "^7.0.2",
-    "ultracite": "8.1.1"
+    "ultracite": "8.2.0"
   },
   "peerDependencies": {
     "@earendil-works/pi-ai": "^1.0.0",
     "@earendil-works/pi-coding-agent": "^1.0.0",
     "@earendil-works/pi-tui": "^1.0.0",
+    "@juicesharp/rpiv-i18n": "*",
     "typebox": "^1.1.38"
   },
   "peerDependenciesMeta": {
@@ -104,6 +114,9 @@
   "pi": {
     "extensions": [
       "./dist/index.js"
+    ],
+    "skills": [
+      "./skills"
     ],
     "image": "https://raw.githubusercontent.com/philipbrembeck/pi-advisor/refs/heads/main/assets/hero.png"
   },

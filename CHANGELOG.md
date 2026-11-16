@@ -6,6 +6,32 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## Unreleased
 
+### Added
+
+- Bundled the `pi-advisor-flow` Pi skill and added the `advisor_config` tool so agents can inspect and update settings after confirmation.
+- Localized the human-facing interface via the optional `@juicesharp/rpiv-i18n` peer dependency: settings, dialogs, submenus, notifications, and transcript renderers resolve through `t()` with complete `de` and `fr` locale files; every other locale falls back to English. Model-facing strings (tool descriptions, prompts, tool-result envelopes) intentionally remain English. A key-consistency test guards locale drift and an integration test verifies live locale switching.
+
+## 0.15.1 - 2026-11-14
+
+### Fixed
+
+- Advisor activation and legacy model streaming now accept providers authenticated with non-empty headers and no API key.
+- Removed the withdrawn `5.1.0` changelog entry that caused Pi to show an extension update notice on every launch.
+
+## 0.15.0 - 2026-11-13
+
+### Added
+
+- Support Pi virtual models as Advisor models. Activation defers credentials to Pi's request-time router, which resolves auth for the selected physical model. Runtimes without `modelRegistry.streamSimple` now get an explicit upgrade/physical-model error instead of a misleading missing-key error.
+
+### Changed
+
+- Updated development dependencies: Pi packages (`pi-ai`, `pi-coding-agent`, and `pi-tui`) to 1.5.2, Oxlint and plugins to 1.93.0, Knip to 6.45.1, TypeBox to 1.4.6, and Ultracite to 8.2.0. Existing peer dependency ranges remain unchanged.
+
+### Fixed
+
+- Advisor and fallback Advisor requests now forward the active Pi session id, so providers that require a session header (such as OpenCode Go's `x-opencode-session`) no longer fail with HTTP 400 `MissingSessionID`.
+
 ## 0.14.4 - 2026-11-03
 
 ### Added
@@ -329,12 +355,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Added a concise `/advisor` explanation of the Advisor's second-opinion role.
 - Preserved Markdown formatting in visible Scout and nested Advisor thinking previews while retaining their speech-bubble cue. During streaming, incomplete Markdown delimiters display transiently until they close, which is expected behavior when thinking arrives incrementally.
 - Adopted an explicit `/model` selection made before `/advisor` as the Executor on the next successful activation, without persisting ordinary model changes while the flow is off.
-
-## [5.1.0] - 2026-09-04 [YANKED]
-
-### Release status
-
-- Published by mistake instead of `0.5.1`; withdrawn from npm and removed from Git, with `latest` restored to `0.5.0`.
 
 ## 0.5.0
 

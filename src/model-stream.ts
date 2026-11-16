@@ -11,6 +11,7 @@ import type {
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 
 import { splitRef } from "./config/state.ts";
+import { hasUsableModelAuth } from "./model-auth.ts";
 
 export interface ResolvedConfiguredModel {
   apiKey?: string;
@@ -53,13 +54,19 @@ export const resolveConfiguredModel = async (
     };
   }
 
+  if (model.api === "pi-virtual") {
+    throw new Error(
+      `Pi virtual model ${ref} requires modelRegistry.streamSimple, which is unavailable in this Pi runtime. Update Pi or select a physical ${label} model.`
+    );
+  }
+
   const auth = await ctx.modelRegistry.getApiKeyAndHeaders(model);
 
   if (!auth.ok) {
     throw new Error(auth.error);
   }
 
-  if (!auth.apiKey) {
+  if (!hasUsableModelAuth(auth)) {
     throw new Error(`No API key for ${ref}`);
   }
 
@@ -77,6 +84,7 @@ export interface CollectTextStreamOptions {
   messages: Message[];
   onChunk?: (thinking: string, text: string) => void;
   reasoning?: string;
+  sessionId?: string;
   signal?: AbortSignal;
   systemPrompt: string;
 }
@@ -281,6 +289,7 @@ const createTextEventStream = (
   if (!streamModel && resolved.streamSimple) {
     return resolved.streamSimple(resolved.model, context, {
       reasoning: toSimpleReasoning(options.reasoning),
+      sessionId: options.sessionId,
       signal: options.signal,
     });
   }
@@ -290,6 +299,7 @@ const createTextEventStream = (
     env: resolved.env,
     headers: resolved.headers,
     reasoning: options.reasoning,
+    sessionId: options.sessionId,
     signal: options.signal,
   };
 
